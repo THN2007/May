@@ -1,0 +1,155 @@
+<!doctype html>
+
+<html lang="my">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>မေ — Heart Drop</title>
+  <style>
+    :root{
+      --bg1:#fff0f4;
+      --bg2:#fff;
+      --accent:#ff2d6f;
+      --muted:#7a7a7a;
+    }
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial}
+    body{
+      background: linear-gradient(180deg,var(--bg1),var(--bg2));
+      display:flex;align-items:center;justify-content:center;padding:24px;
+    }.card{
+  width:100%;max-width:980px;background:rgba(255,255,255,0.6);backdrop-filter:blur(6px);border-radius:20px;padding:28px;box-shadow:0 10px 30px rgba(0,0,0,0.06);display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:center;position:relative;
+}
+
+/* Left column */
+.left h1{font-size:96px;margin:0;line-height:.9;font-weight:800;color:#111}
+.left p{margin:8px 0 18px;color:var(--muted)}
+
+.drop-area{
+  position:relative;height:320px;border-radius:14px;overflow:hidden;background:linear-gradient(180deg, #fff6f9 0%, #ffeef6 100%);border:1px solid rgba(255,45,111,0.06);
+}
+
+.heart{
+  position:absolute;bottom:12px;pointer-events:none;font-size:40px;transform-origin:center;will-change:transform,opacity;filter:drop-shadow(0 8px 18px rgba(255,45,111,0.12));
+}
+
+@keyframes floatUp {
+  0%{transform:translateY(0) scale(1);opacity:1}
+  30%{opacity:0.96}
+  100%{transform:translateY(-480px) scale(1.18);opacity:0}
+}
+
+/* Right column */
+.right{display:flex;flex-direction:column;align-items:center;gap:12px}
+.portrait{width:320px;height:320px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,45,111,0.07);box-shadow:0 24px 50px rgba(0,0,0,0.06);animation:floatSub 6s ease-in-out infinite}
+.portrait img{width:100%;height:100%;object-fit:cover;display:block}
+@keyframes floatSub{0%{transform:translateY(0)}50%{transform:translateY(-10px)}100%{transform:translateY(0)}}
+
+.credit{position:absolute;left:50%;transform:translateX(-50%);bottom:12px;font-size:12px;color:rgba(30,30,30,0.35)}
+
+/* responsive */
+@media (max-width:880px){.card{grid-template-columns:1fr;}
+  .right{order:-1}
+  .left h1{font-size:72px}
+  .portrait{width:220px;height:220px}
+  .drop-area{height:240px}
+}
+
+  </style>
+</head>
+<body>
+  <main class="card" role="main">
+    <section class="left">
+      <h1>မေ</h1>
+      <h1></h1>ချစ်ရပါသောမေ  သို့...</p><div id="drop" class="drop-area" aria-hidden="false">
+    <!-- hearts will be inserted here -->
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+      <div style="text-align:center;">
+        <div style="font-size:22px;font-weight:600;color:var(--accent);">10.10.2025</div>
+        <div style="font-size:13px;color:var(--accent);opacity:.85"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<aside class="right" aria-label="profile image">
+  <div class="portrait">
+    <img id="portraitImg" src="img.jpg" alt="Portrait placeholder"/>
+  </div>
+  <div style="font-size:13px;color:#666;text-align:center;max-width:320px">အရမ်းချစ်တယ်မေ <code></code><code></code>.</div>
+</aside>
+
+<div class="credit"></div>
+
+  </main>  <script>
+    (function(){
+      const drop = document.getElementById('drop');
+      let counter = 0;
+      const maxHearts = 28;
+
+      function createHeart(){
+        const el = document.createElement('div');
+        el.className = 'heart';
+        el.textContent = '❤️';
+
+        // random horizontal position inside container
+        const rect = drop.getBoundingClientRect();
+        const left = Math.random() * (rect.width - 40) + 10; // px
+        el.style.left = left + 'px';
+
+        // random size
+        const size = Math.floor(Math.random()*28) + 22; // 22-50
+        el.style.fontSize = size + 'px';
+
+        // random rotation for subtle variation
+        const rot = (Math.random()*40 - 20).toFixed(1);
+        el.style.transform = `translateY(0) rotate(${rot}deg)`;
+
+        // random animation duration and delay
+        const duration = (Math.random()*2 + 3).toFixed(2); // 3-5s
+        const delay = (Math.random()*0.6).toFixed(2);
+        el.style.animation = `floatUp ${duration}s ease-in ${delay}s forwards`;
+
+        // small horizontal drift using CSS transform (we'll add later with requestAnimationFrame)
+        el.dataset.drift = (Math.random()*40 - 20).toFixed(1); // px drift amount
+
+        drop.appendChild(el);
+
+        // cleanup after animation (duration + delay + small buffer)
+        const total = (parseFloat(duration) + parseFloat(delay) + 0.2) * 1000;
+        setTimeout(()=>{
+          if(el.parentNode) el.parentNode.removeChild(el);
+        }, total);
+
+        // limit total nodes
+        counter++;
+        if(counter > maxHearts){
+          // remove oldest heart if present
+          const first = drop.querySelector('.heart');
+          if(first) first.remove();
+          counter = Math.min(counter, maxHearts);
+        }
+      }
+
+      // spawn hearts periodically
+      let spawnInterval = setInterval(createHeart, 650);
+
+      // pause on mouseover for fun
+      drop.addEventListener('mouseenter', ()=>{ clearInterval(spawnInterval); spawnInterval = null; });
+      drop.addEventListener('mouseleave', ()=>{ if(!spawnInterval) spawnInterval = setInterval(createHeart,650); });
+
+      // accessibility: allow keyboard to toggle with space on drop area
+      drop.tabIndex = 0;
+      drop.addEventListener('keydown', (e)=>{
+        if(e.code==='Space' || e.key === ' '){
+          e.preventDefault();
+          if(spawnInterval){ clearInterval(spawnInterval); spawnInterval = null; }
+          else spawnInterval = setInterval(createHeart,650);
+        }
+      });
+
+      // initial burst
+      for(let i=0;i<6;i++) setTimeout(createHeart, i*120);
+
+    })();
+  </script></body>
+</html>
